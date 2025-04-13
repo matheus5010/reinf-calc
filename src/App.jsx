@@ -160,6 +160,39 @@ function App() {
     doc.save(`reinf_retencoes_${mesFiltro}.pdf`);
   };
 
+import XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
+const exportarXLSX = () => {
+  const dados = filtrarNotasPorMes(mesFiltro).map(n => ({
+    "DATA EMISSÃO": n.dataNota,
+    "NUMERO DA NOTA": n.numero,
+    "CÓDIGO DO SERVIÇO": n.codServico,
+    "EMPRESA": n.nomePrestador,
+    "CNPJ": n.cnpjPrestador,
+    "TOMADOR": n.nomeTomador,
+    "VALOR": parseFloat(n.valorTotal),
+    "ISENTO": parseFloat(n.valorIR) < 10 && parseFloat(n.valorCSRF) < 10 ? "SIM" : "NÃO",
+    "DATA DE PAGAMENTO": n.dataPagamento,
+    "IR": parseFloat(n.valorIR),
+    "CSLL": "",
+    "PIS": "",
+    "COFINS": "",
+    "ABAIXO DE 10": parseFloat(n.valorIR) < 10 || parseFloat(n.valorCSRF) < 10 ? "SIM" : "",
+    "CSRF": "CONCLUIDO",
+    "IR STATUS": "CONCLUIDO"
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RETENÇÕES");
+
+  const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  saveAs(blob, `reinf_retencoes_${mesFiltro || "completo"}.xlsx`);
+};
+
+
   return (
     <div className="container">
       <h1>Controle EFD-Reinf</h1>
@@ -192,7 +225,7 @@ function App() {
 
       <div className="filtros">
         <input placeholder="Filtrar por mês (AAAA-MM)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
-        <button onClick={exportarCSV}>Exportar CSV</button>
+        <button onClick={exportarXLSX}>Exportar XLSX</button>
         <button onClick={exportarPDF}>Exportar PDF</button>
       </div>
 
