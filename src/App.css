@@ -1,59 +1,114 @@
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+/* Reset básico */
+body, input, button, textarea {
+  font-family: 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f4f4f4;
+  color: #000;
 }
 
 .container {
   max-width: 1200px;
-  margin: auto;
-  padding: 20px;
-  background-color: white;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  letter-spacing: 1px;
+}
+
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+input, textarea, button, label {
+  width: 100%;
+  font-size: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+}
+
+input, textarea {
+  padding: 12px;
   border-radius: 10px;
+  border: 1px solid #ddd;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-input, textarea, button {
-  margin: 5px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-input[readonly] {
-  background-color: #eee;
+input:focus, textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
 }
 
 textarea {
   resize: vertical;
-  height: 60px;
-  width: 100%;
+  min-height: 60px;
 }
 
 button {
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
+  padding: 12px;
   border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  background: linear-gradient(to right, #007bff, #00d4ff);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background: linear-gradient(to right, #0056b3, #009fc2);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tabela {
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 10px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
+  padding: 12px 10px;
+  border: 1px solid #eee;
   text-align: left;
 }
 
 th {
-  background-color: #f0f0f0;
+  background-color: #fafafa;
+  font-weight: bold;
 }
 
+tfoot td {
+  background-color: #f0f8ff;
+  font-weight: bold;
+}

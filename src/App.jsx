@@ -145,22 +145,31 @@ function App() {
     <div className="container">
       <h1>Controle EFD-Reinf</h1>
 
-      <div className="formulario">
-        <input placeholder="Nº Nota" name="numero" value={form.numero} onChange={handleChange} />
-        <input type="date" name="dataNota" value={form.dataNota} onChange={handleChange} />
-        <input type="date" name="dataPagamento" value={form.dataPagamento} onChange={handleChange} />
-        <input placeholder="Valor Total" name="valorTotal" value={form.valorTotal} onChange={handleChange} />
-        <input placeholder="CNPJ Prestador" name="cnpjPrestador" value={form.cnpjPrestador} onChange={handleChange} />
-        <input placeholder="Nome Prestador" name="nomePrestador" value={form.nomePrestador} onChange={handleChange} />
-        <input placeholder="Nome Tomador" name="nomeTomador" value={form.nomeTomador} onChange={handleChange} />
-        <input placeholder="Código do Serviço" name="codServico" value={form.codServico} onChange={handleChange} />
-        <input placeholder="Prazo Pgto" name="prazoPagamento" value={form.prazoPagamento} readOnly />
-        <input placeholder="Valor IR (1,5%)" name="valorIR" value={form.valorIR} readOnly />
-        <input placeholder="Valor CSRF (4,65%)" name="valorCSRF" value={form.valorCSRF} readOnly />
-        <textarea placeholder="Observações" name="obs" value={form.obs} onChange={handleChange} />
-        <button onClick={adicionarNota}>{editandoIndex !== null ? 'Salvar Alteração' : 'Adicionar Nota'}</button>
-        <button onClick={() => setForm(formInicial)}>Limpar</button>
-      </div>
+     <div className="formulario">
+  <input placeholder="Nº Nota" name="numero" value={form.numero} onChange={handleChange} />
+
+  <label>
+    Data da Nota (Fato Gerador do IR)
+    <input type="date" name="dataNota" value={form.dataNota} onChange={handleChange} />
+  </label>
+
+  <label>
+    Data do Pagamento (Fato Gerador do CSRF)
+    <input type="date" name="dataPagamento" value={form.dataPagamento} onChange={handleChange} />
+  </label>
+
+  <input placeholder="Valor Total" name="valorTotal" value={form.valorTotal} onChange={handleChange} />
+  <input placeholder="CNPJ Prestador" name="cnpjPrestador" value={form.cnpjPrestador} onChange={handleChange} />
+  <input placeholder="Nome Prestador" name="nomePrestador" value={form.nomePrestador} onChange={handleChange} />
+  <input placeholder="Nome Tomador" name="nomeTomador" value={form.nomeTomador} onChange={handleChange} />
+  <input placeholder="Código do Serviço" name="codServico" value={form.codServico} onChange={handleChange} />
+  <input placeholder="Prazo Pgto" name="prazoPagamento" value={form.prazoPagamento} readOnly />
+  <input placeholder="Valor IR (1,5%)" name="valorIR" value={form.valorIR} readOnly />
+  <input placeholder="Valor CSRF (4,65%)" name="valorCSRF" value={form.valorCSRF} readOnly />
+  <textarea placeholder="Observações" name="obs" value={form.obs} onChange={handleChange} />
+  <button onClick={adicionarNota}>{editandoIndex !== null ? 'Salvar Alteração' : 'Adicionar Nota'}</button>
+  <button onClick={() => setForm(formInicial)}>Limpar</button>
+</div>
 
       <div className="filtros">
         <input placeholder="Filtrar por mês (AAAA-MM)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
