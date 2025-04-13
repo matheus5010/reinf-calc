@@ -136,13 +136,18 @@ function App() {
       n.cnpjPrestador,
       n.nomePrestador,
       n.nomeTomador,
-      parseFloat(n.valorTotal).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      parseFloat(n.valorIR).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      parseFloat(n.valorCSRF).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      parseFloat(n.valorTotal || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      parseFloat(n.valorIR || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      parseFloat(n.valorCSRF || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
       n.codServico,
       n.prazoPagamento,
       n.obs
     ]);
+
+    if (dados.length === 0) {
+      alert("Nenhuma nota encontrada para exportar.");
+      return;
+    }
 
     doc.autoTable({
       startY: 20,
@@ -155,7 +160,7 @@ function App() {
       headStyles: { fillColor: [22, 160, 133] }
     });
 
-    doc.save(`reinf_retencoes_${mesFiltro?.replace("-", "/") || "completo"}.pdf`);
+    doc.save(`reinf_retencoes_${mesFiltro?.replace("-", "_") || "completo"}.pdf`);
   };
 
   const exportarXLSX = () => {
