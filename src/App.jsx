@@ -78,13 +78,6 @@ function App() {
   };
 
   const adicionarNota = () => {
-    const camposObrigatorios = ["numero", "dataNota", "dataPagamento", "valorTotal", "cnpjPrestador"];
-    const camposVazios = camposObrigatorios.filter(c => !form[c]);
-    if (camposVazios.length > 0) {
-      alert("Preencha todos os campos obrigatórios.");
-      return;
-    }
-
     if (editandoIndex !== null) {
       const novasNotas = [...notas];
       novasNotas[editandoIndex] = form;
@@ -107,91 +100,92 @@ function App() {
   };
 
   const filtrarNotasPorMes = (ref) => {
-  return notas.filter((n) => {
-    const dataIR = new Date(n.dataNota);
-    dataIR.setMonth(dataIR.getMonth() + 1);
-    const irAno = `${dataIR.getFullYear()}`;
-    const irMes = `${dataIR.getFullYear()}-${(dataIR.getMonth() + 1).toString().padStart(2, "0")}`;
+    const refFormatado = ref.replace("/", "-");
+    return notas.filter((n) => {
+      const dataIR = new Date(n.dataNota);
+      dataIR.setMonth(dataIR.getMonth() + 1);
+      const mesIR = `${(dataIR.getMonth() + 1).toString().padStart(2, "0")}-${dataIR.getFullYear()}`;
+      const anoIR = `${dataIR.getFullYear()}`;
 
-    const dataCSRF = new Date(n.dataPagamento);
-    dataCSRF.setMonth(dataCSRF.getMonth() + 1);
-    const csrfAno = `${dataCSRF.getFullYear()}`;
-    const csrfMes = `${dataCSRF.getFullYear()}-${(dataCSRF.getMonth() + 1).toString().padStart(2, "0")}`;
+      const dataCSRF = new Date(n.dataPagamento);
+      dataCSRF.setMonth(dataCSRF.getMonth() + 1);
+      const mesCSRF = `${(dataCSRF.getMonth() + 1).toString().padStart(2, "0")}-${dataCSRF.getFullYear()}`;
+      const anoCSRF = `${dataCSRF.getFullYear()}`;
 
-    return irMes === ref || csrfMes === ref || irAno === ref || csrfAno === ref;
-  });
-};
+      return (
+        mesIR === refFormatado ||
+        mesCSRF === refFormatado ||
+        anoIR === refFormatado ||
+        anoCSRF === refFormatado
+      );
+    });
+  };
 
   const somaCampo = (campo) =>
     filtrarNotasPorMes(mesFiltro).reduce((acc, n) => acc + parseFloat(n[campo] || 0), 0);
 
-  const exportarCSV = () => {
-    const header = [
-      "Numero", "Data Nota", "Data Pagamento", "CNPJ Prestador", "Nome Prestador", "Nome Tomador", "Valor Total",
-      "Valor IR", "Valor CSRF", "Código do Serviço", "Prazo Pgto", "Observações"
-    ];
-    const rows = filtrarNotasPorMes(mesFiltro).map(n => [
-      n.numero, n.dataNota, n.dataPagamento, n.cnpjPrestador, n.nomePrestador, n.nomeTomador,
-      n.valorTotal, n.valorIR, n.valorCSRF, n.codServico, n.prazoPagamento, n.obs
-    ]);
-    const csvContent = [header, ...rows].map(e => e.map(v => `"${v}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `reinf_retencoes_${mesFiltro}.csv`);
-    link.click();
-  };
-
   const exportarPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Retenções a pagar - ${mesFiltro}`, 14, 15);
+    doc.setFontSize(14);
+    doc.text(`Retenções a pagar - ${mesFiltro?.replace("-", "/") || "Período completo"}`, 14, 15);
+
     const dados = filtrarNotasPorMes(mesFiltro).map(n => [
-      n.numero, n.dataNota, n.dataPagamento, n.cnpjPrestador, n.nomePrestador, n.nomeTomador,
-      n.valorTotal, n.valorIR, n.valorCSRF, n.codServico, n.prazoPagamento, n.obs
+      n.numero,
+      n.dataNota,
+      n.dataPagamento,
+      n.cnpjPrestador,
+      n.nomePrestador,
+      n.nomeTomador,
+      parseFloat(n.valorTotal).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      parseFloat(n.valorIR).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      parseFloat(n.valorCSRF).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      n.codServico,
+      n.prazoPagamento,
+      n.obs
     ]);
+
     doc.autoTable({
       startY: 20,
       head: [[
-        "Nº", "Nota", "Pagamento", "CNPJ", "Prestador", "Tomador",
+        "Nº", "Nota", "Pgto", "CNPJ", "Prestador", "Tomador",
         "Total", "IR", "CSRF", "Serviço", "Prazo", "Obs"
       ]],
       body: dados,
-      styles: { fontSize: 8 }
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [22, 160, 133] }
     });
-    doc.save(`reinf_retencoes_${mesFiltro}.pdf`);
+
+    doc.save(`reinf_retencoes_${mesFiltro?.replace("-", "/") || "completo"}.pdf`);
   };
 
+  const exportarXLSX = () => {
+    const dados = filtrarNotasPorMes(mesFiltro).map(n => ({
+      "DATA EMISSÃO": n.dataNota,
+      "NUMERO DA NOTA": n.numero,
+      "CÓDIGO DO SERVIÇO": n.codServico,
+      "EMPRESA": n.nomePrestador,
+      "CNPJ": n.cnpjPrestador,
+      "TOMADOR": n.nomeTomador,
+      "VALOR": parseFloat(n.valorTotal),
+      "ISENTO": parseFloat(n.valorIR) < 10 && parseFloat(n.valorCSRF) < 10 ? "SIM" : "NÃO",
+      "DATA DE PAGAMENTO": n.dataPagamento,
+      "IR": parseFloat(n.valorIR),
+      "CSLL": "",
+      "PIS": "",
+      "COFINS": "",
+      "ABAIXO DE 10": parseFloat(n.valorIR) < 10 || parseFloat(n.valorCSRF) < 10 ? "SIM" : "",
+      "CSRF": "CONCLUIDO",
+      "IR STATUS": "CONCLUIDO"
+    }));
 
-const exportarXLSX = () => {
-  const dados = filtrarNotasPorMes(mesFiltro).map(n => ({
-    "DATA EMISSÃO": n.dataNota,
-    "NUMERO DA NOTA": n.numero,
-    "CÓDIGO DO SERVIÇO": n.codServico,
-    "EMPRESA": n.nomePrestador,
-    "CNPJ": n.cnpjPrestador,
-    "TOMADOR": n.nomeTomador,
-    "VALOR": parseFloat(n.valorTotal),
-    "ISENTO": parseFloat(n.valorIR) < 10 && parseFloat(n.valorCSRF) < 10 ? "SIM" : "NÃO",
-    "DATA DE PAGAMENTO": n.dataPagamento,
-    "IR": parseFloat(n.valorIR),
-    "CSLL": "",
-    "PIS": "",
-    "COFINS": "",
-    "ABAIXO DE 10": parseFloat(n.valorIR) < 10 || parseFloat(n.valorCSRF) < 10 ? "SIM" : "",
-    "CSRF": "CONCLUIDO",
-    "IR STATUS": "CONCLUIDO"
-  }));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "RETENÇÕES");
 
-  const ws = XLSX.utils.json_to_sheet(dados);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "RETENÇÕES");
-
-  const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-  saveAs(blob, `reinf_retencoes_${mesFiltro || "completo"}.xlsx`);
-};
-
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, `reinf_retencoes_${mesFiltro || "completo"}.xlsx`);
+  };
 
   return (
     <div className="container">
@@ -199,17 +193,14 @@ const exportarXLSX = () => {
 
       <div className="formulario">
         <input placeholder="Nº Nota" name="numero" value={form.numero} onChange={handleChange} />
-
         <label>
           Data da Nota (Fato Gerador do IR)
           <input type="date" name="dataNota" value={form.dataNota} onChange={handleChange} />
         </label>
-
         <label>
           Data do Pagamento (Fato Gerador do CSRF)
           <input type="date" name="dataPagamento" value={form.dataPagamento} onChange={handleChange} />
         </label>
-
         <input placeholder="Valor Total" name="valorTotal" value={form.valorTotal} onChange={handleChange} />
         <input placeholder="CNPJ Prestador" name="cnpjPrestador" value={form.cnpjPrestador} onChange={handleChange} />
         <input placeholder="Nome Prestador" name="nomePrestador" value={form.nomePrestador} onChange={handleChange} />
@@ -224,7 +215,7 @@ const exportarXLSX = () => {
       </div>
 
       <div className="filtros">
-        <input placeholder="Filtrar por mês (AAAA-MM)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
+        <input placeholder="Filtrar por mês (MM/AAAA)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
         <button onClick={exportarXLSX}>Exportar XLSX</button>
         <button onClick={exportarPDF}>Exportar PDF</button>
       </div>
