@@ -104,17 +104,21 @@ function App() {
     setNotas(novasNotas);
   };
 
-  const filtrarNotasPorMes = (mesRef) => {
-    return notas.filter((n) => {
-      const dataIR = new Date(n.dataNota);
-      dataIR.setMonth(dataIR.getMonth() + 1);
-      const mesIR = `${dataIR.getFullYear()}-${(dataIR.getMonth() + 1).toString().padStart(2, "0")}`;
-      const dataCSRF = new Date(n.dataPagamento);
-      dataCSRF.setMonth(dataCSRF.getMonth() + 1);
-      const mesCSRF = `${dataCSRF.getFullYear()}-${(dataCSRF.getMonth() + 1).toString().padStart(2, "0")}`;
-      return mesIR === mesRef || mesCSRF === mesRef;
-    });
-  };
+  const filtrarNotasPorMes = (ref) => {
+  return notas.filter((n) => {
+    const dataIR = new Date(n.dataNota);
+    dataIR.setMonth(dataIR.getMonth() + 1);
+    const irAno = `${dataIR.getFullYear()}`;
+    const irMes = `${dataIR.getFullYear()}-${(dataIR.getMonth() + 1).toString().padStart(2, "0")}`;
+
+    const dataCSRF = new Date(n.dataPagamento);
+    dataCSRF.setMonth(dataCSRF.getMonth() + 1);
+    const csrfAno = `${dataCSRF.getFullYear()}`;
+    const csrfMes = `${dataCSRF.getFullYear()}-${(dataCSRF.getMonth() + 1).toString().padStart(2, "0")}`;
+
+    return irMes === ref || csrfMes === ref || irAno === ref || csrfAno === ref;
+  });
+};
 
   const somaCampo = (campo) =>
     filtrarNotasPorMes(mesFiltro).reduce((acc, n) => acc + parseFloat(n[campo] || 0), 0);
