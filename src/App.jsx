@@ -9,6 +9,16 @@ function App() {
     return dadosSalvos ? JSON.parse(dadosSalvos) : [];
   });
 
+  const aplicarMascaraCNPJ = (valor) => {
+    return valor
+      .replace(/\D/g, '')
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+      .slice(0, 18);
+  };
+
   const formInicial = {
     numero: "",
     dataNota: "",
@@ -32,12 +42,9 @@ function App() {
     localStorage.setItem("notas", JSON.stringify(notas));
   }, [notas]);
 
-  const formatarCNPJ = (cnpj) =>
-    cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const updatedForm = { ...form, [name]: value };
+    const updatedForm = { ...form };
 
     if (name === "valorTotal") {
       const total = parseFloat(value) || 0;
@@ -48,13 +55,21 @@ function App() {
     }
 
     if (name === "dataNota" || name === "dataPagamento") {
-      const dataIR = new Date(updatedForm.dataNota);
+      const dataIR = new Date(name === "dataNota" ? value : form.dataNota);
       dataIR.setMonth(dataIR.getMonth() + 1);
       dataIR.setDate(20);
-      const dataCSRF = new Date(updatedForm.dataPagamento);
+
+      const dataCSRF = new Date(name === "dataPagamento" ? value : form.dataPagamento);
       dataCSRF.setMonth(dataCSRF.getMonth() + 1);
       dataCSRF.setDate(20);
+
       updatedForm.prazoPagamento = `IR: ${dataIR.toLocaleDateString()} | CSRF: ${dataCSRF.toLocaleDateString()}`;
+    }
+
+    if (name === "cnpjPrestador") {
+      updatedForm[name] = aplicarMascaraCNPJ(value);
+    } else {
+      updatedForm[name] = value;
     }
 
     setForm(updatedForm);
@@ -145,31 +160,31 @@ function App() {
     <div className="container">
       <h1>Controle EFD-Reinf</h1>
 
-     <div className="formulario">
-  <input placeholder="Nº Nota" name="numero" value={form.numero} onChange={handleChange} />
+      <div className="formulario">
+        <input placeholder="Nº Nota" name="numero" value={form.numero} onChange={handleChange} />
 
-  <label>
-    Data da Nota (Fato Gerador do IR)
-    <input type="date" name="dataNota" value={form.dataNota} onChange={handleChange} />
-  </label>
+        <label>
+          Data da Nota (Fato Gerador do IR)
+          <input type="date" name="dataNota" value={form.dataNota} onChange={handleChange} />
+        </label>
 
-  <label>
-    Data do Pagamento (Fato Gerador do CSRF)
-    <input type="date" name="dataPagamento" value={form.dataPagamento} onChange={handleChange} />
-  </label>
+        <label>
+          Data do Pagamento (Fato Gerador do CSRF)
+          <input type="date" name="dataPagamento" value={form.dataPagamento} onChange={handleChange} />
+        </label>
 
-  <input placeholder="Valor Total" name="valorTotal" value={form.valorTotal} onChange={handleChange} />
-  <input placeholder="CNPJ Prestador" name="cnpjPrestador" value={form.cnpjPrestador} onChange={handleChange} />
-  <input placeholder="Nome Prestador" name="nomePrestador" value={form.nomePrestador} onChange={handleChange} />
-  <input placeholder="Nome Tomador" name="nomeTomador" value={form.nomeTomador} onChange={handleChange} />
-  <input placeholder="Código do Serviço" name="codServico" value={form.codServico} onChange={handleChange} />
-  <input placeholder="Prazo Pgto" name="prazoPagamento" value={form.prazoPagamento} readOnly />
-  <input placeholder="Valor IR (1,5%)" name="valorIR" value={form.valorIR} readOnly />
-  <input placeholder="Valor CSRF (4,65%)" name="valorCSRF" value={form.valorCSRF} readOnly />
-  <textarea placeholder="Observações" name="obs" value={form.obs} onChange={handleChange} />
-  <button onClick={adicionarNota}>{editandoIndex !== null ? 'Salvar Alteração' : 'Adicionar Nota'}</button>
-  <button onClick={() => setForm(formInicial)}>Limpar</button>
-</div>
+        <input placeholder="Valor Total" name="valorTotal" value={form.valorTotal} onChange={handleChange} />
+        <input placeholder="CNPJ Prestador" name="cnpjPrestador" value={form.cnpjPrestador} onChange={handleChange} />
+        <input placeholder="Nome Prestador" name="nomePrestador" value={form.nomePrestador} onChange={handleChange} />
+        <input placeholder="Nome Tomador" name="nomeTomador" value={form.nomeTomador} onChange={handleChange} />
+        <input placeholder="Código do Serviço" name="codServico" value={form.codServico} onChange={handleChange} />
+        <input placeholder="Prazo Pgto" name="prazoPagamento" value={form.prazoPagamento} readOnly />
+        <input placeholder="Valor IR (1,5%)" name="valorIR" value={form.valorIR} readOnly />
+        <input placeholder="Valor CSRF (4,65%)" name="valorCSRF" value={form.valorCSRF} readOnly />
+        <textarea placeholder="Observações" name="obs" value={form.obs} onChange={handleChange} />
+        <button onClick={adicionarNota}>{editandoIndex !== null ? 'Salvar Alteração' : 'Adicionar Nota'}</button>
+        <button onClick={() => setForm(formInicial)}>Limpar</button>
+      </div>
 
       <div className="filtros">
         <input placeholder="Filtrar por mês (AAAA-MM)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
@@ -204,7 +219,7 @@ function App() {
                   <td>{n.numero}</td>
                   <td>{n.dataNota}</td>
                   <td>{n.dataPagamento}</td>
-                  <td>{formatarCNPJ(n.cnpjPrestador)}</td>
+                  <td>{n.cnpjPrestador}</td>
                   <td>{n.nomePrestador}</td>
                   <td>{n.nomeTomador}</td>
                   <td>{parseFloat(n.valorTotal).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
