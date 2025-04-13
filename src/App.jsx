@@ -33,7 +33,8 @@ function App() {
     nomePrestador: "",
     nomeTomador: "",
     prazoPagamento: "",
-    obs: ""
+    obs: "",
+    status: "Em Aberto"
   };
 
   const [form, setForm] = useState(formInicial);
@@ -99,6 +100,12 @@ function App() {
     setNotas(novasNotas);
   };
 
+  const marcarComoPago = (index) => {
+    const novasNotas = [...notas];
+    novasNotas[index].status = "Pago";
+    setNotas(novasNotas);
+  };
+
   const filtrarNotasPorMes = (ref) => {
     const refFormatado = ref.replace("/", "-");
     return notas.filter((n) => {
@@ -121,76 +128,18 @@ function App() {
     });
   };
 
+  const estaVencido = (prazo) => {
+    if (!prazo) return false;
+    const partes = prazo.match(/\d{2}\/\d{2}\/\d{4}/g);
+    if (!partes) return false;
+    const dataIR = new Date(partes[0].split("/").reverse().join("-"));
+    const dataCSRF = new Date(partes[1].split("/").reverse().join("-"));
+    const hoje = new Date();
+    return dataIR < hoje || dataCSRF < hoje;
+  };
+
   const somaCampo = (campo) =>
     filtrarNotasPorMes(mesFiltro).reduce((acc, n) => acc + parseFloat(n[campo] || 0), 0);
-
-  const exportarPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(`Retenções a pagar - ${mesFiltro?.replace("-", "/") || "Período completo"}`, 14, 15);
-
-    const dados = filtrarNotasPorMes(mesFiltro).map(n => [
-      n.numero,
-      n.dataNota,
-      n.dataPagamento,
-      n.cnpjPrestador,
-      n.nomePrestador,
-      n.nomeTomador,
-      parseFloat(n.valorTotal || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      parseFloat(n.valorIR || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      parseFloat(n.valorCSRF || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      n.codServico,
-      n.prazoPagamento,
-      n.obs
-    ]);
-
-    if (dados.length === 0) {
-      alert("Nenhuma nota encontrada para exportar.");
-      return;
-    }
-
-    doc.autoTable({
-      startY: 20,
-      head: [[
-        "Nº", "Nota", "Pgto", "CNPJ", "Prestador", "Tomador",
-        "Total", "IR", "CSRF", "Serviço", "Prazo", "Obs"
-      ]],
-      body: dados,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [22, 160, 133] }
-    });
-
-    doc.save(`reinf_retencoes_${mesFiltro?.replace("-", "_") || "completo"}.pdf`);
-  };
-
-  const exportarXLSX = () => {
-    const dados = filtrarNotasPorMes(mesFiltro).map(n => ({
-      "DATA EMISSÃO": n.dataNota,
-      "NUMERO DA NOTA": n.numero,
-      "CÓDIGO DO SERVIÇO": n.codServico,
-      "EMPRESA": n.nomePrestador,
-      "CNPJ": n.cnpjPrestador,
-      "TOMADOR": n.nomeTomador,
-      "VALOR": parseFloat(n.valorTotal),
-      "ISENTO": parseFloat(n.valorIR) < 10 && parseFloat(n.valorCSRF) < 10 ? "SIM" : "NÃO",
-      "DATA DE PAGAMENTO": n.dataPagamento,
-      "IR": parseFloat(n.valorIR),
-      "CSLL": "",
-      "PIS": "",
-      "COFINS": "",
-      "ABAIXO DE 10": parseFloat(n.valorIR) < 10 || parseFloat(n.valorCSRF) < 10 ? "SIM" : "",
-      "CSRF": "CONCLUIDO",
-      "IR STATUS": "CONCLUIDO"
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "RETENÇÕES");
-
-    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `reinf_retencoes_${mesFiltro || "completo"}.xlsx`);
-  };
 
   return (
     <div className="container">
@@ -221,8 +170,6 @@ function App() {
 
       <div className="filtros">
         <input placeholder="Filtrar por mês (MM/AAAA)" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} />
-        <button onClick={exportarXLSX}>Exportar XLSX</button>
-        <button onClick={exportarPDF}>Exportar PDF</button>
       </div>
 
       {mesFiltro && (
@@ -242,13 +189,14 @@ function App() {
                 <th>CSRF</th>
                 <th>Serviço</th>
                 <th>Prazo</th>
+                <th>Status</th>
                 <th>Obs</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
               {filtrarNotasPorMes(mesFiltro).map((n, i) => (
-                <tr key={i}>
+                <tr key={i} style={{ backgroundColor: n.status === 'Pago' ? '#e0ffe0' : estaVencido(n.prazoPagamento) ? '#ffe0e0' : 'white' }}>
                   <td>{n.numero}</td>
                   <td>{n.dataNota}</td>
                   <td>{n.dataPagamento}</td>
@@ -260,10 +208,12 @@ function App() {
                   <td>{parseFloat(n.valorCSRF).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
                   <td>{n.codServico}</td>
                   <td>{n.prazoPagamento}</td>
+                  <td>{n.status}</td>
                   <td>{n.obs}</td>
                   <td>
                     <button onClick={() => editarNota(i)}>Editar</button>
                     <button onClick={() => excluirNota(i)}>Excluir</button>
+                    {n.status !== 'Pago' && <button onClick={() => marcarComoPago(i)}>Marcar como Pago</button>}
                   </td>
                 </tr>
               ))}
