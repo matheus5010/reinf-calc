@@ -2,6 +2,8 @@ import './App.css';
 import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 function App() {
   const [notas, setNotas] = useState(() => {
@@ -160,8 +162,6 @@ function App() {
     doc.save(`reinf_retencoes_${mesFiltro}.pdf`);
   };
 
-import XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 const exportarXLSX = () => {
   const dados = filtrarNotasPorMes(mesFiltro).map(n => ({
